@@ -28,6 +28,12 @@
   .stat { border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
   .stat b { display:block; font-size:20px; color:var(--brand); }
   .stat span { font-size:13px; color:var(--muted); }
+  .chat { border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:12px; }
+  .bubble { max-width:88%; padding:10px 14px; border-radius:14px; margin:8px 0; font-size:15px; }
+  .q { background:var(--brand); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+  .a { background:#f4f4f5; color:var(--ink); border-bottom-left-radius:4px; }
+  .who { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:14px 0 -2px; }
+  .a .src { display:block; margin-top:6px; font-size:12px; color:var(--muted); }
   footer { margin-top:48px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
   a { color:var(--accent); }
   #gate { position:fixed; inset:0; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; z-index:9999; }
@@ -99,6 +105,26 @@
     <tr><td><code>get_faqs</code></td><td>Frequently asked questions</td></tr>
     <tr><td><code>request_quote</code></td><td>Capture a quote request (material, qty, delivery city)</td></tr>
   </table>
+
+  <h2>See it in action</h2>
+  <p>What an AI assistant returns when it's connected to this server — accurate,
+  first-party answers with a Twisted Nail source, not a guess:</p>
+  <div class="chat">
+    <div class="who" style="text-align:right">Contractor → AI assistant</div>
+    <div class="bubble q">I need 30 yards of granite delivered to Round Rock — can Twisted Nail do that?</div>
+    <div class="who">AI assistant (via Twisted Nail MCP)</div>
+    <div class="bubble a">Yes. Twisted Nail supplies granite through its network of 140+ quarries and serves
+    Round Rock in Central Texas. 30 yards is well above the 10-yard minimum (1 full tandem load). To lock in
+    pricing and scheduling, reach dispatch at 254-651-3597 or their contact form.
+    <span class="src">Tools used: list_materials · get_service_areas · request_quote · Source: twistednail.com</span></div>
+    <div class="who" style="text-align:right">Contractor → AI assistant</div>
+    <div class="bubble q">Do they handle heavy haul, and what's the minimum order?</div>
+    <div class="who">AI assistant (via Twisted Nail MCP)</div>
+    <div class="bubble a">Yes — Twisted Nail partners with top heavy-haul carriers for specialized and super
+    heavy-haul projects. The aggregate minimum is 10 yards (1 full tandem load); for smaller amounts it's more
+    cost-efficient to arrange pickup.
+    <span class="src">Tools used: list_services · get_faqs · Source: twistednail.com</span></div>
+  </div>
 
   <h2>Where it will live</h2>
   <p>Once deployed, any AI client connects to the production endpoint (Streamable HTTP):</p>
