@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Twisted Nail — AI Assistant Demo</title>
+<meta name="description" content="Sample AI assistant for Twisted Nail, powered by the MCP server — shows how an AI chat answers customer questions on the client site." />
+<style>
+  :root { --brand:#1F2A33; --accent:#E8792B; --ink:#1a1a1a; --muted:#6b7280; --line:#e6e6e6; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--ink); }
+  /* faux client site behind the widget */
+  .site { min-height:100%; background:linear-gradient(180deg,#22303a 0%,#1a252d 100%); color:#fff; }
+  .nav { display:flex; align-items:center; justify-content:space-between; max-width:1080px; margin:0 auto; padding:20px 24px; }
+  .logo { font-weight:800; letter-spacing:.02em; font-size:20px; }
+  .logo b { color:var(--accent); }
+  .nav ul { display:flex; gap:22px; list-style:none; margin:0; padding:0; font-size:14px; color:#cfd8dd; }
+  .hero { max-width:1080px; margin:0 auto; padding:56px 24px 120px; }
+  .hero .eyebrow { color:var(--accent); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:13px; }
+  .hero h1 { font-size:44px; line-height:1.1; margin:12px 0 14px; max-width:16ch; }
+  .hero p { color:#cfd8dd; max-width:52ch; font-size:18px; }
+  .hero .stats { display:flex; gap:34px; margin-top:34px; flex-wrap:wrap; }
+  .hero .stats b { display:block; font-size:26px; color:var(--accent); }
+  .hero .stats span { font-size:13px; color:#aebac1; }
+  .demoflag { position:fixed; top:0; left:0; right:0; background:#111; color:#f1c27d; font-size:12.5px; text-align:center; padding:6px; z-index:60; letter-spacing:.02em; }
+  /* chat widget */
+  .widget { position:fixed; bottom:24px; right:24px; width:380px; max-width:calc(100vw - 32px); background:#fff; color:var(--ink); border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.35); overflow:hidden; z-index:70; display:flex; flex-direction:column; }
+  .w-head { background:var(--brand); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+  .w-head .av { width:34px; height:34px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:800; }
+  .w-head .t b { font-size:15px; display:block; }
+  .w-head .t span { font-size:11.5px; color:#cbd5db; }
+  .w-head .live { margin-left:auto; font-size:11px; color:#bfe9c8; display:flex; align-items:center; gap:6px; }
+  .w-head .live i { width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 3px rgba(74,222,128,.25); }
+  .w-body { height:400px; overflow-y:auto; padding:16px; background:#fafafa; }
+  .msg { display:flex; flex-direction:column; margin:10px 0; }
+  .msg.user { align-items:flex-end; }
+  .msg .b { max-width:85%; padding:10px 13px; border-radius:14px; font-size:14.5px; line-height:1.5; }
+  .msg.user .b { background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot .b { background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.bot .b ul { margin:6px 0; padding-left:18px; }
+  .toolcall { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#b5551a; background:#fff7f0; border:1px solid #f3d9c2; border-radius:6px; padding:4px 8px; margin-bottom:4px; align-self:flex-start; }
+  .src { font-size:11px; color:var(--muted); margin-top:6px; display:block; }
+  .typing { display:inline-flex; gap:4px; padding:12px 14px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .typing i { width:7px; height:7px; border-radius:50%; background:#bbb; animation:blink 1.2s infinite both; }
+  .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+  .w-foot { border-top:1px solid var(--line); background:#fff; padding:10px 12px; }
+  .chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; }
+  .chip { white-space:nowrap; font-size:12px; border:1px solid var(--line); background:#fff; border-radius:14px; padding:5px 11px; cursor:pointer; }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .row { display:flex; gap:8px; }
+  .row input { flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:9px; font-size:14.5px; }
+  .row button { border:0; background:var(--accent); color:#fff; font-weight:700; padding:0 16px; border-radius:9px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="demoflag">DEMO · Sample AI assistant powered by the Twisted Nail MCP server · shown as it would appear on twistednail.com</div>
+<div class="site">
+  <div class="nav">
+    <div class="logo">TWISTED<b>NAIL</b></div>
+    <ul><li>Materials</li><li>Services</li><li>Service Area</li><li>Contact</li></ul>
+  </div>
+  <div class="hero">
+    <div class="eyebrow">Central Texas</div>
+    <h1>One-Call Construction Trucking &amp; Wholesale Aggregate Supply</h1>
+    <p>140+ quarry partners. 150+ owner-operators. One call gets your material sourced and hauled.</p>
+    <div class="stats">
+      <div><b>1M+</b><span>Tons delivered</span></div>
+      <div><b>140+</b><span>Quarry partners</span></div>
+      <div><b>150+</b><span>Owner-operators</span></div>
+      <div><b>175+</b><span>5-star reviews</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head">
+    <div class="av">TN</div>
+    <div class="t"><b>Twisted Nail Assistant</b><span>Ask about materials, hauling &amp; quotes</span></div>
+    <div class="live"><i></i> MCP live</div>
+  </div>
+  <div class="w-body" id="body"></div>
+  <div class="w-foot">
+    <div class="chips" id="chips"></div>
+    <div class="row">
+      <input id="input" type="text" placeholder="Type a question…" />
+      <button id="send">Ask</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var CONTACT='Reach dispatch at <strong>254-651-3597</strong> or the <a href="https://twistednail.com/contact-us/" target="_blank" rel="noopener">contact form</a>.';
+  var SRC='twistednail.com';
+  var QA=[
+    { tools:['list_materials'], keywords:['material','materials','aggregate','aggregates','supply','carry','stock','sell','products','limestone','river rock','granite','sand','fill','soil','recycled','rock','gravel','stone','what do you have'],
+      answer:'We supply six aggregate types through 140+ quarries: <strong>limestone, river rock, granite, sand, fill &amp; soil, and recycled materials</strong>. Grades, sizing, and pricing are quote-based.' },
+    { tools:['list_services'], keywords:['service','services','what do you do','offer','hauling','haul','trucking','truck','transport','brokering','broker','freight','import','export'],
+      answer:'Four services: <ul><li><strong>Aggregate supply</strong> — from 140+ quarries</li><li><strong>Trucking</strong> — 150+ owner-operators</li><li><strong>Freight brokering</strong></li><li><strong>Heavy haul</strong> — specialized projects</li></ul>' },
+    { tools:['get_offering'], keywords:['heavy haul','heavy-haul','oversized','specialized','super heavy','equipment','machinery','big load','overweight'],
+      answer:'Yes — we partner with top heavy-haul carriers for specialized and super heavy-haul projects. "You just point us to what you would like moved and tell us where to put it."' },
+    { tools:['get_service_areas'], keywords:['where','area','areas','deliver','delivery','serve','location','locations','austin','bryan','killeen','round rock','san antonio','temple','waco','central texas','texas','near me','cover','coverage','ship'],
+      answer:'We serve <strong>Central Texas</strong> — Austin, Bryan, Killeen, Round Rock, San Antonio, Temple, and Waco. We haul (no storefront); material can be native or shipped in. Dispatch: <strong>254-651-3597</strong>.' },
+    { tools:['get_faqs'], keywords:['minimum','min order','smallest','how little','least','order size','yards','tandem','one load','small'],
+      answer:'The minimum is <strong>10 yards of aggregate (1 full tandem load)</strong>. For less than 10 yards it\'s more cost-efficient to arrange pickup.' },
+    { tools:['get_faqs'], keywords:['find','specific','hard to find','special','native','source','locate','uncommon','get me'],
+      answer:'Yes — the material may be native to the area or shipped in from elsewhere. Through our 140+ supplier network we can get you on the right path.' },
+    { tools:['get_overview'], keywords:['who','about','company','history','founded','when','established','background','how long','years','experience','reviews','track record','tons'],
+      answer:'Twisted Nail is a Central Texas construction trucking &amp; wholesale aggregate supplier. <strong>Founded 2014</strong>, 100% owner-operator model, 140+ quarry partners, 1M+ tons delivered, 175+ 5-star reviews.' },
+    { tools:['list_services'], keywords:['driver','drivers','owner operator','owner-operator','join','work','hiring','hire','carrier','job','lease','partner'],
+      answer:'We run a 100% owner-operator model with <strong>guaranteed pay, competitive rates, and honest operations</strong>. Reach out to join or partner.' },
+    { tools:['request_quote'], keywords:['quote','price','pricing','cost','estimate','how much','rate','bid','proposal','buy','purchase','order','get started'],
+      answer:'Pricing is quote-based — it depends on material, quantity, and delivery location (10-yard minimum). Share those three and we\'ll price it. '+CONTACT },
+    { tools:['get_service_areas','request_quote'], keywords:['contact','phone','call','reach','email','talk','get in touch','number','speak'],
+      answer:CONTACT }
+  ];
+  var body=document.getElementById('body'), input=document.getElementById('input');
+  function el(c,h){var d=document.createElement('div');d.className=c;if(h!=null)d.innerHTML=h;return d;}
+  function match(q){var t=q.toLowerCase(),best=null,bs=0;QA.forEach(function(e){var s=0;e.keywords.forEach(function(k){if(t.indexOf(k)>-1)s+=k.indexOf(' ')>-1?3:1;});if(s>bs){bs=s;best=e;}});return bs>0?best:null;}
+  function user(t){var m=el('msg user');m.appendChild(el('b',t.replace(/</g,'&lt;')));body.appendChild(m);body.scrollTop=body.scrollHeight;}
+  function bot(e){var m=el('msg bot');if(e.tools)m.appendChild(el('toolcall','🔧 MCP tool: '+e.tools.join('() · ')+'()'));var b=el('b',e.answer);if(e.tools)b.appendChild(el('span src','Source: '+SRC));m.appendChild(b);body.appendChild(m);body.scrollTop=body.scrollHeight;}
+  function think(){var m=el('msg bot');m.appendChild(el('typing','<i></i><i></i><i></i>'));body.appendChild(m);body.scrollTop=body.scrollHeight;return m;}
+  function ask(q){q=(q||'').trim();if(!q)return;user(q);input.value='';var th=think();setTimeout(function(){body.removeChild(th);var h=match(q);bot(h||{tools:['search_knowledge'],answer:'I don\'t have that specific detail published. '+CONTACT});},650);}
+  ['What materials do you supply?','Deliver granite to Round Rock?','Minimum order?','Do you do heavy haul?','I need a quote'].forEach(function(c){var b=el('chip',c);b.onclick=function(){ask(c)};document.getElementById('chips').appendChild(b);});
+  document.getElementById('send').onclick=function(){ask(input.value)};
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')ask(input.value);});
+  bot({answer:'Hi! I\'m the Twisted Nail assistant. Ask me about our aggregate materials, hauling services, service area, or minimum order — or tap a question below.'});
+})();
+</script>
+</body>
+</html>
