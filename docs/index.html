@@ -34,6 +34,33 @@
   .a { background:#f4f4f5; color:var(--ink); border-bottom-left-radius:4px; }
   .who { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:14px 0 -2px; }
   .a .src { display:block; margin-top:6px; font-size:12px; color:var(--muted); }
+  /* interactive assistant */
+  .asst { border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .asst-head { background:var(--brand); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+  .asst-head .dot { width:9px; height:9px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 3px rgba(74,222,128,.25); }
+  .asst-head b { font-size:15px; }
+  .asst-head span { font-size:12px; color:#cdd5db; }
+  .asst-body { padding:16px; height:360px; overflow-y:auto; background:#fafafa; }
+  .msg { display:flex; flex-direction:column; margin:10px 0; }
+  .msg.user { align-items:flex-end; }
+  .msg .b { max-width:86%; padding:10px 14px; border-radius:14px; font-size:14.5px; line-height:1.5; }
+  .msg.user .b { background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot .b { background:#fff; border:1px solid var(--line); color:var(--ink); border-bottom-left-radius:4px; }
+  .msg.bot .b ul { margin:6px 0; padding-left:18px; }
+  .toolcall { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:var(--accent); background:#fff7f0; border:1px solid #f3d9c2; border-radius:6px; padding:4px 9px; margin:6px 0 2px; display:inline-flex; align-items:center; gap:6px; align-self:flex-start; }
+  .toolcall b { color:#b5551a; font-weight:700; }
+  .src2 { font-size:11.5px; color:var(--muted); margin-top:7px; }
+  .typing { display:inline-flex; gap:4px; padding:12px 14px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .typing i { width:7px; height:7px; border-radius:50%; background:#bbb; animation:blink 1.2s infinite both; }
+  .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+  .asst-foot { border-top:1px solid var(--line); padding:12px 14px; background:#fff; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+  .chip { font-size:12.5px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:16px; padding:6px 12px; cursor:pointer; }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .asst-input { display:flex; gap:8px; }
+  .asst-input input { flex:1; padding:11px 13px; border:1px solid var(--line); border-radius:8px; font-size:14.5px; }
+  .asst-input button { border:0; background:var(--accent); color:#fff; font-weight:700; padding:0 18px; border-radius:8px; cursor:pointer; }
   footer { margin-top:48px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
   a { color:var(--accent); }
   #gate { position:fixed; inset:0; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; z-index:9999; }
@@ -106,25 +133,110 @@
     <tr><td><code>request_quote</code></td><td>Capture a quote request (material, qty, delivery city)</td></tr>
   </table>
 
-  <h2>See it in action</h2>
-  <p>What an AI assistant returns when it's connected to this server — accurate,
-  first-party answers with a Twisted Nail source, not a guess:</p>
-  <div class="chat">
-    <div class="who" style="text-align:right">Contractor → AI assistant</div>
-    <div class="bubble q">I need 30 yards of granite delivered to Round Rock — can Twisted Nail do that?</div>
-    <div class="who">AI assistant (via Twisted Nail MCP)</div>
-    <div class="bubble a">Yes. Twisted Nail supplies granite through its network of 140+ quarries and serves
-    Round Rock in Central Texas. 30 yards is well above the 10-yard minimum (1 full tandem load). To lock in
-    pricing and scheduling, reach dispatch at 254-651-3597 or their contact form.
-    <span class="src">Tools used: list_materials · get_service_areas · request_quote · Source: twistednail.com</span></div>
-    <div class="who" style="text-align:right">Contractor → AI assistant</div>
-    <div class="bubble q">Do they handle heavy haul, and what's the minimum order?</div>
-    <div class="who">AI assistant (via Twisted Nail MCP)</div>
-    <div class="bubble a">Yes — Twisted Nail partners with top heavy-haul carriers for specialized and super
-    heavy-haul projects. The aggregate minimum is 10 yards (1 full tandem load); for smaller amounts it's more
-    cost-efficient to arrange pickup.
-    <span class="src">Tools used: list_services · get_faqs · Source: twistednail.com</span></div>
+  <h2>Try it — live AI assistant</h2>
+  <p>Ask a question the way a contractor would. This is the same knowledge base and the same
+  tools the MCP server exposes — watch which <strong>MCP tool</strong> each answer calls.</p>
+  <div class="asst">
+    <div class="asst-head">
+      <span class="dot"></span>
+      <b>Twisted Nail Assistant</b>
+      <span>· powered by the Twisted Nail MCP</span>
+    </div>
+    <div class="asst-body" id="chatBody"></div>
+    <div class="asst-foot">
+      <div class="chips" id="chips"></div>
+      <div class="asst-input">
+        <input id="chatInput" type="text" placeholder='e.g. "Do you deliver granite to Round Rock?"' />
+        <button id="chatSend">Ask</button>
+      </div>
+    </div>
   </div>
+  <p style="font-size:13px;color:var(--muted)">This demo runs the retrieval logic in your browser so it
+  works with no backend. In production the identical questions are answered by an AI assistant (Claude,
+  ChatGPT, etc.) calling these tools over the live MCP endpoint.</p>
+
+  <script>
+  (function(){
+    var CONTACT = 'Reach Twisted Nail dispatch at <strong>254-651-3597</strong> or the ' +
+      '<a href="https://twistednail.com/contact-us/" target="_blank" rel="noopener">contact form</a>.';
+    var SRC = 'twistednail.com';
+    // Each entry: what the agent answers + which MCP tool(s) it "calls".
+    var QA = [
+      { tools:['list_materials'],
+        keywords:['material','materials','aggregate','aggregates','supply','carry','stock','sell','products','what do you have','limestone','river rock','granite','sand','fill','soil','recycled','rock','gravel','stone'],
+        answer:'Twisted Nail supplies six aggregate types through a network of 140+ quarries: <strong>limestone, river rock, granite, sand, fill &amp; soil, and recycled materials</strong>. Grades, sizing, and pricing are quote-based.' },
+      { tools:['list_services'],
+        keywords:['service','services','what do you do','offer','hauling','haul','trucking','truck','transport','brokering','broker','freight','deliver material','import','export'],
+        answer:'Four services: <ul><li><strong>Aggregate supply</strong> — wholesale material from 140+ quarries</li><li><strong>Trucking</strong> — a daily fleet of 150+ owner-operators</li><li><strong>Freight brokering</strong> — guaranteed pay, competitive rates</li><li><strong>Heavy haul</strong> — specialized &amp; super heavy-haul projects</li></ul>' },
+      { tools:['get_offering'],
+        keywords:['heavy haul','heavy-haul','oversized','specialized','super heavy','move equipment','move machinery','big load','overweight'],
+        answer:'Yes. Twisted Nail partners with top heavy-haul carriers for specialized and super heavy-haul projects — "you just point us to what you would like moved and tell us where to put it."' },
+      { tools:['get_service_areas'],
+        keywords:['where','area','areas','deliver','delivery','serve','service area','location','locations','austin','bryan','killeen','round rock','san antonio','temple','waco','central texas','texas','near me','cover','coverage','ship to'],
+        answer:'Twisted Nail serves <strong>Central Texas</strong> — Austin, Bryan, Killeen, Round Rock, San Antonio, Temple, and Waco. It hauls (no retail storefront); material can be native to the area or shipped in. Dispatch: <strong>254-651-3597</strong>.' },
+      { tools:['get_faqs'],
+        keywords:['minimum','min order','smallest','how much','how little','least','order size','yards','tandem','one load','small order'],
+        answer:'The minimum is <strong>10 yards of aggregate (1 full tandem load)</strong>. For quantities smaller than 10 yards it\'s more cost-efficient for the customer to arrange pickup.' },
+      { tools:['get_faqs'],
+        keywords:['find','specific','hard to find','special material','native','source','can you get','locate','uncommon'],
+        answer:'Yes — the material you need may be native to the area or shipped in from elsewhere. Either way, through the 140+ quarry &amp; supplier network, Twisted Nail can get you on the right path.' },
+      { tools:['get_overview'],
+        keywords:['who','about','company','history','founded','when','established','background','how long','years','experience','reviews','track record','tons'],
+        answer:'Twisted Nail is a Central Texas construction trucking &amp; wholesale aggregate supplier — "One-Call Construction Trucking &amp; Wholesale Aggregate Supply." <strong>Founded 2014</strong>, 100% owner-operator model, 140+ quarry partners, 150+ operators, 1M+ tons delivered, and 175+ 5-star Google reviews.' },
+      { tools:['list_services'],
+        keywords:['driver','drivers','owner operator','owner-operator','join','work','hiring','hire','carrier','job','partner with you','lease'],
+        answer:'Twisted Nail runs a 100% owner-operator model and works with drivers on <strong>guaranteed pay, competitive rates from a large customer network, and honest operations</strong>. Reach out to join or partner.' },
+      { tools:['request_quote'],
+        keywords:['quote','price','pricing','cost','estimate','how much does','rate','bid','proposal','buy','purchase','get started','order'],
+        answer:'Pricing is quote-based — it depends on material, quantity, and delivery location (10-yard minimum). Share those three and Twisted Nail will price it. ' + CONTACT },
+      { tools:['get_service_areas','request_quote'],
+        keywords:['contact','phone','call','reach','email','talk','get in touch','number','speak'],
+        answer:CONTACT }
+    ];
+
+    var body=document.getElementById('chatBody'), input=document.getElementById('chatInput');
+
+    function scoreMatch(q){
+      var t=q.toLowerCase(), best=null, bs=0;
+      QA.forEach(function(e){
+        var s=0;
+        e.keywords.forEach(function(k){ if(t.indexOf(k)>-1) s+=k.indexOf(' ')>-1?3:1; });
+        if(s>bs){bs=s;best=e;}
+      });
+      return bs>0?best:null;
+    }
+    function el(cls,html){ var d=document.createElement('div'); d.className=cls; if(html!=null)d.innerHTML=html; return d; }
+    function addUser(text){ var m=el('msg user'); m.appendChild(el('b',text.replace(/</g,'&lt;'))); body.appendChild(m); body.scrollTop=body.scrollHeight; }
+    function addBot(entry){
+      var m=el('msg bot');
+      if(entry.tools){ m.appendChild(el('toolcall','🔧 MCP tool: <b>'+entry.tools.join('()&nbsp;·&nbsp;')+'()</b>')); }
+      var b=el('b',entry.answer);
+      if(entry.tools){ b.appendChild(el('src2','Source: '+SRC)); }
+      m.appendChild(b); body.appendChild(m); body.scrollTop=body.scrollHeight;
+    }
+    function thinking(){ var m=el('msg bot'); var t=el('typing','<i></i><i></i><i></i>'); m.appendChild(t); body.appendChild(m); body.scrollTop=body.scrollHeight; return m; }
+
+    function ask(q){
+      q=(q||'').trim(); if(!q)return; addUser(q); input.value='';
+      var th=thinking();
+      setTimeout(function(){
+        body.removeChild(th);
+        var hit=scoreMatch(q);
+        if(hit){ addBot(hit); }
+        else{ addBot({ tools:['search_knowledge'], answer:'I don\'t have that specific detail in Twisted Nail\'s published info. '+CONTACT }); }
+      }, 650);
+    }
+
+    var CHIPS=['What aggregate materials do you supply?','Do you deliver granite to Round Rock?','What\'s the minimum order?','Do you handle heavy haul?','I need a quote'];
+    var chipWrap=document.getElementById('chips');
+    CHIPS.forEach(function(c){ var b=el('chip',c); b.onclick=function(){ask(c)}; chipWrap.appendChild(b); });
+    document.getElementById('chatSend').onclick=function(){ask(input.value)};
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter')ask(input.value); });
+
+    // greeting
+    addBot({ answer:'Hi! I\'m the Twisted Nail assistant. Ask me about our aggregate materials, hauling services, service area, or minimum order — or tap a question below.' });
+  })();
+  </script>
 
   <h2>Where it will live</h2>
   <p>Once deployed, any AI client connects to the production endpoint (Streamable HTTP):</p>
