@@ -1,0 +1,16 @@
+name = "twistednail-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# McpAgent keeps each agent session in a Durable Object.
+[[durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "ClientMCP"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ClientMCP"]
+
+[observability]
+enabled = true
